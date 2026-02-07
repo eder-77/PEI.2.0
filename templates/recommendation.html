@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recommandations - PEI</title>
+    <link rel="stylesheet" href="../style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Open+Sans:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Ce script s'exécute immédiatement avant que le corps de la page ne s'affiche
+      (function () {
+        const savedTheme = localStorage.getItem("theme") || "light";
+        if (savedTheme === "dark") {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
+  </head>
+
+  <body>
+    <nav class="navbar">
+      <div class="logo">
+        <img src="../images/enpei.png" alt="" /><span>PEI</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="../index.html">Accueil</a></li>
+        <li><a href="../library/library.html">Bibliothèque</a></li>
+        <li><a href="../tutor/tutor.html">Tuteur IA</a></li>
+        <li>
+          <a href="recommendation.html" class="active">Recommandations</a>
+        </li>
+        <li><a href="../planner/planner.html">Planificateur</a></li>
+        <li>
+          <button
+            id="theme-toggle"
+            style="
+              background: none;
+              border: none;
+              cursor: pointer;
+              color: var(--text-dark);
+              font-size: 1.2rem;
+            "
+          >
+            <i class="fas fa-moon"></i>
+          </button>
+        </li>
+        <li>
+          <a href="../account/account.html" class="btn-account">Compte</a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="page-header">
+      <h1>Recommandé pour vous</h1>
+      <p>Basé sur vos intérêts et vos notes récentes</p>
+    </div>
+
+    <section class="rec-container">
+      <div class="course-card">
+        <div class="card-img" style="background: #e0f2fe; color: #0369a1">
+          <i class="fas fa-code fa-3x"></i>
+        </div>
+        <div class="card-info">
+          <span style="font-size: 0.8rem; color: green">Match 98%</span>
+          <h3>Python pour la Data Science</h3>
+          <p>Complète votre cours de statistiques.</p>
+          <button class="btn-card">Voir le cours</button>
+        </div>
+      </div>
+
+      <div class="course-card">
+        <div class="card-img" style="background: #fce7f3; color: #be185d">
+          <i class="fas fa-brain fa-3x"></i>
+        </div>
+        <div class="card-info">
+          <span style="font-size: 0.8rem; color: green">Match 85%</span>
+          <h3>Psychologie Cognitive</h3>
+          <p>Populaire parmi les étudiants de votre filière.</p>
+          <button class="btn-card">Voir le cours</button>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="footer-content"><p>&copy; 2026 ENPEI-PEI</p></div>
+    </footer>
+    <script src="../script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<header class="hero-section">
+  <div class="hero-content">
+    <h1>PEI <br /><span>Plateforme Éducative Intelligente</span></h1>
+    <p>
+      Une plateforme éducative révolutionnaire basée sur l’intelligence
+      artificielle. Nous offrons un environnement d’apprentissage
+      confortable et une variété de ressources pour transformer votre
+      expérience universitaire.
+    </p>
+    <div class="hero-buttons">
+      <a href="#" class="btn-primary">Commencer</a>
+      <a href="#" class="btn-secondary">En savoir plus</a>
+    </div>
+  </div>
+  <div class="hero-image">
+    <img src="{% static 'images/enpei.png' %}" alt="Logo PEI" />
+  </div>
+</header>
+
+<section class="services-section">
+  <h2 class="section-title">Nos Fonctionnalités</h2>
+  <div class="services-container">
+    <div class="service-card">
+      <i class="fas fa-book-open icon"></i>
+      <h3>Bibliothèque</h3>
+      <p>Accédez à des milliers de ressources et livres numériques.</p>
+    </div>
+
+    <div class="service-card">
+      <i class="fas fa-microchip icon"></i>
+      <h3>Tuteur IA</h3>
+      <p>Un assistant intelligent pour répondre à vos questions 24/7.</p>
+    </div>
+
+    <div class="service-card">
+      <i class="fas fa-lightbulb icon"></i>
+      <h3>Système de Recommandation</h3>
+      <p>Des suggestions de cours adaptées à votre profil.</p>
+    </div>
+
+    <div class="service-card">
+      <i class="fas fa-calendar-alt icon"></i>
+      <h3>Planificateur</h3>
+      <p>Organisez votre emploi du temps et vos examens facilement.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

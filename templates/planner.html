@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Planificateur - PEI</title>
+    <link rel="stylesheet" href="../style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Open+Sans:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Ce script s'exécute immédiatement avant que le corps de la page ne s'affiche
+      (function () {
+        const savedTheme = localStorage.getItem("theme") || "light";
+        if (savedTheme === "dark") {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="logo">
+        <img src="../images/enpei.png" alt="" /><span>PEI</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="../index.html">Accueil</a></li>
+        <li><a href="../library/library.html">Bibliothèque</a></li>
+        <li><a href="../tutor/tutor.html">Tuteur IA</a></li>
+        <li>
+          <a href="../recommendation/recommendation.html">Recommandations</a>
+        </li>
+        <li><a href="planner.html" class="active">Planificateur</a></li>
+        <li>
+          <button
+            id="theme-toggle"
+            style="
+              background: none;
+              border: none;
+              cursor: pointer;
+              color: var(--text-dark);
+              font-size: 1.2rem;
+            "
+          >
+            <i class="fas fa-moon"></i>
+          </button>
+        </li>
+        <li>
+          <a href="../account/account.html" class="btn-account">Compte</a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="page-header">
+      <h1>Mon Emploi du Temps</h1>
+      <button class="btn-primary" style="margin-top: 10px">
+        + Ajouter une tâche
+      </button>
+    </div>
+
+    <section class="planner-grid">
+      <div class="day-column">
+        <div class="day-header">Lundi</div>
+        <div class="task"><b>08:00</b> - Maths</div>
+        <div class="task"><b>14:00</b> - Projet Info</div>
+      </div>
+      <div class="day-column">
+        <div class="day-header">Mardi</div>
+        <div class="task"><b>10:00</b> - Anglais</div>
+      </div>
+      <div class="day-column">
+        <div class="day-header">Mercredi</div>
+        <div class="task"><b>09:00</b> - Physique</div>
+        <div class="task"><b>16:00</b> - Révisions</div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="footer-content"><p>&copy;2026 ENPEI-PEI</p></div>
+    </footer>
+    <script src="../script.js"></script>
+  </body>
+</html>

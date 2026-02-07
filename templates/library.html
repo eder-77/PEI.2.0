@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="page-header">
+  <h1>Bibliothèque Numérique</h1>
+  <p>Explorez nos ressources validées par l'IA</p>
+</div>
+
+<section class="library-container">
+  <div class="book-card">
+    <div class="card-img"><i class="fas fa-book fa-3x"></i></div>
+    <div class="card-info">
+      <h3>Introduction à l'IA</h3>
+      <p>Auteur: Jean Dupont</p>
+      <button class="btn-card">Lire</button>
+    </div>
+  </div>
+  <div class="book-card">
+    <div class="card-img"><i class="fas fa-calculator fa-3x"></i></div>
+    <div class="card-info">
+      <h3>Mathématiques Avancées</h3>
+      <p>Auteur: Marie Curie</p>
+      <button class="btn-card">Lire</button>
+    </div>
+  </div>
+</section>
+{% endblock %}
