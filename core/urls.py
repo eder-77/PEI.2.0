@@ -6,5 +6,5 @@ urlpatterns=[
   path('library/',views.library,name='library'),
   path('account/',views.account,name='account'),
   path('api/chat/', views.chat_api, name='chat_api'),
-  
+  path('api/search/',views.search_api,name='search_api'),
 ]

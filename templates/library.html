@@ -1,27 +1,443 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block content %}
 <div class="page-header">
   <h1>Bibliothèque Numérique</h1>
-  <p>Explorez nos ressources validées par l'IA</p>
+
+  <!-- Barre de recherche intelligente -->
+  <div style="margin-top: 20px; max-width: 600px; margin-left: auto; margin-right: auto; position: relative;">
+
+    <!-- Icône loupe -->
+    <i class="fas fa-search" id="search-icon" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); 
+              color: var(--text-light); z-index: 2; pointer-events: none;"></i>
+
+    <!-- Spinner de chargement (caché par défaut) -->
+    <div id="search-spinner" style="display: none; position: absolute; right: 16px; top: 50%; 
+                transform: translateY(-50%); z-index: 2;">
+      <div style="width: 18px; height: 18px; border: 2px solid var(--text-light); 
+                  border-top-color: var(--primary-color); border-radius: 50%; 
+                  animation: spin 0.7s linear infinite;"></div>
+    </div>
+
+    <!-- Bouton effacer (caché par défaut) -->
+    <button id="clear-btn" onclick="clearSearch()" style="display: none; position: absolute; right: 16px; top: 50%; 
+                   transform: translateY(-50%); background: none; border: none; 
+                   cursor: pointer; color: var(--text-light); font-size: 1.1rem; z-index: 2;">
+      ✕
+    </button>
+
+    <input type="text" id="search-input" placeholder="Rechercher un cours, TP, examen..." autocomplete="off" style="width: 100%; padding: 14px 48px; border-radius: 12px;
+                  border: 2px solid var(--input-border);
+                  background-color: var(--input-bg);
+                  color: var(--text-dark);
+                  font-size: 1rem;
+                  box-sizing: border-box;
+                  transition: border-color 0.2s, box-shadow 0.2s;"
+      onfocus="this.style.borderColor='var(--primary-color)'; this.style.boxShadow='0 0 0 3px rgba(99,102,241,0.15)'"
+      onblur="this.style.borderColor='var(--input-border)'; this.style.boxShadow='none'">
+
+    <!-- Dropdown des résultats instantanés -->
+    <div id="search-dropdown" style="display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+                background: var(--card-bg, white); border-radius: 12px;
+                border: 1px solid var(--input-border);
+                box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+                z-index: 1000; overflow: hidden; max-height: 420px; overflow-y: auto;">
+    </div>
+  </div>
+
+  <!-- Fil d'Ariane selon l'étape -->
+  <div style="margin-top: 15px;" id="breadcrumb">
+    {% if step == 'subjects' %}
+    <p>Modules de : <strong>{{ current_level.get_name_display }}</strong></p>
+    <a href="{% url 'library' %}" class="btn-primary"
+      style="text-decoration: none; padding: 8px 15px; border-radius: 5px;">
+      ← Retour aux années
+    </a>
+    {% elif step == 'types' %}
+    <p>Catégories pour : <strong>{{ current_subject.name }}</strong></p>
+    <a href="?level={{ level_id }}" class="btn-primary"
+      style="text-decoration: none; padding: 8px 15px; border-radius: 5px;">
+      ← Retour aux modules
+    </a>
+    {% elif step == 'files' %}
+    <p>Fichiers : <strong>{{ type_name }}</strong> — {{ current_subject.name }}</p>
+    <a href="?level={{ level_id }}&subject={{ current_subject.id }}" class="btn-primary"
+      style="text-decoration: none; padding: 8px 15px; border-radius: 5px;">
+      ← Retour aux catégories
+    </a>
+    {% else %}
+    <p>Choisissez votre année d'étude</p>
+    {% endif %}
+  </div>
 </div>
 
 <section class="library-container">
+
+  {% if step == 'search_results' %}
+  {% for doc in documents %}
   <div class="book-card">
-    <div class="card-img"><i class="fas fa-book fa-3x"></i></div>
+    <div class="card-img" style="background: var(--hover-bg);">
+      {% if doc.doc_type == 'COUR' %}
+      <i class="fas fa-book fa-3x" style="color: var(--primary-color);"></i>
+      {% elif doc.doc_type == 'TP' %}
+      <i class="fas fa-laptop-code fa-3x" style="color: #10b981;"></i>
+      {% elif doc.doc_type == 'EXAM' %}
+      <i class="fas fa-file-signature fa-3x" style="color: #ef4444;"></i>
+      {% endif %}
+    </div>
     <div class="card-info">
-      <h3>Introduction à l'IA</h3>
-      <p>Auteur: Jean Dupont</p>
-      <button class="btn-card">Lire</button>
+      <span style="font-size: 0.8rem; color: var(--text-light);">
+        {{ doc.subject.level.get_name_display }} → {{ doc.subject.name }} → {{ doc.get_doc_type_display }}
+      </span>
+      <h3>{{ doc.title }}</h3>
+      <p style="font-size: 0.85rem; color: var(--text-light);">
+        Ajouté le {{ doc.uploaded_at|date:"d/m/Y" }}
+      </p>
+      {% if doc.file_doc %}
+      <a href="{{ doc.file_doc.url }}" target="_blank" class="btn-card"
+        style="text-align: center; display: block; margin-top: auto;">
+        Ouvrir le PDF
+      </a>
+      {% else %}
+      <button class="btn-card" disabled style="background-color: grey;">Fichier indisponible</button>
+      {% endif %}
     </div>
   </div>
+  {% empty %}
+  <p style="grid-column: 1 / -1; text-align: center; color: var(--text-light);">
+    Aucun document trouvé pour "<strong>{{ search_query }}</strong>". Essayez un autre mot-clé.
+  </p>
+  {% endfor %}
+
+  {% elif step == 'levels' %}
+  {% for level in levels %}
+  <a href="?level={{ level.id }}" class="book-card" style="text-decoration: none; cursor: pointer;">
+    <div class="card-img" style="background: var(--hover-bg);">
+      <i class="fas fa-graduation-cap fa-3x" style="color: var(--primary-color);"></i>
+    </div>
+    <div class="card-info" style="text-align: center;">
+      <h3 style="margin-top: 15px;">{{ level.get_name_display }}</h3>
+    </div>
+  </a>
+  {% endfor %}
+
+  {% elif step == 'subjects' %}
+  {% for subject in subjects %}
+  <a href="?level={{ current_level.id }}&subject={{ subject.id }}" class="book-card"
+    style="text-decoration: none; cursor: pointer;">
+    <div class="card-img" style="background: var(--hover-bg);">
+      <i class="fas fa-book fa-3x" style="color: #0ea5e9;"></i>
+    </div>
+    <div class="card-info" style="text-align: center;">
+      <h3 style="margin-top: 15px;">{{ subject.name }}</h3>
+    </div>
+  </a>
+  {% empty %}
+  <p style="grid-column: 1 / -1; text-align: center; color: var(--text-light);">
+    Aucun module n'a encore été ajouté pour cette année.
+  </p>
+  {% endfor %}
+
+  {% elif step == 'types' %}
+  {% for type_code, type_name in types %}
+  <a href="?level={{ level_id }}&subject={{ current_subject.id }}&type={{ type_code }}" class="book-card"
+    style="text-decoration: none; cursor: pointer;">
+    <div class="card-img" style="background: var(--hover-bg);">
+      {% if type_code == 'COUR' %}
+      <i class="fas fa-chalkboard-teacher fa-3x" style="color: var(--primary-color);"></i>
+      {% elif type_code == 'TP' %}
+      <i class="fas fa-laptop-code fa-3x" style="color: #10b981;"></i>
+      {% elif type_code == 'EXAM' %}
+      <i class="fas fa-file-signature fa-3x" style="color: #ef4444;"></i>
+      {% endif %}
+    </div>
+    <div class="card-info" style="text-align: center;">
+      <h3 style="margin-top: 15px;">{{ type_name }}</h3>
+    </div>
+  </a>
+  {% endfor %}
+
+  {% elif step == 'files' %}
+  {% for doc in documents %}
   <div class="book-card">
-    <div class="card-img"><i class="fas fa-calculator fa-3x"></i></div>
+    <div class="card-img" style="background: var(--hover-bg);">
+      <i class="fas fa-file-pdf fa-3x" style="color: #ef4444;"></i>
+    </div>
     <div class="card-info">
-      <h3>Mathématiques Avancées</h3>
-      <p>Auteur: Marie Curie</p>
-      <button class="btn-card">Lire</button>
+      <h3>{{ doc.title }}</h3>
+      <p style="color: var(--text-light); font-size: 0.85rem;">
+        Ajouté le {{ doc.uploaded_at|date:"d/m/Y" }}
+      </p>
+      {% if doc.file_doc %}
+      <a href="{{ doc.file_doc.url }}" target="_blank" class="btn-card"
+        style="text-align: center; display: block; margin-top: auto;">
+        Ouvrir le PDF
+      </a>
+      {% else %}
+      <button class="btn-card" disabled style="background-color: grey;">Fichier indisponible</button>
+      {% endif %}
     </div>
   </div>
+  {% empty %}
+  <p style="grid-column: 1 / -1; text-align: center; color: var(--text-light);">
+    Aucun fichier trouvé dans ce dossier.
+  </p>
+  {% endfor %}
+
+  {% endif %}
+
 </section>
+<style>
+  @keyframes spin {
+    to {
+      transform: translateY(-50%) rotate(360deg);
+    }
+  }
+
+  .search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--input-border);
+    transition: background 0.15s;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .search-result-item:last-child {
+    border-bottom: none;
+  }
+
+  .search-result-item:hover {
+    background: var(--hover-bg);
+  }
+
+  .result-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
+
+  .result-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .result-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .result-meta {
+    font-size: 0.78rem;
+    color: var(--text-light);
+    margin-top: 2px;
+  }
+
+  .result-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  .search-header {
+    padding: 10px 16px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--hover-bg);
+  }
+
+  .search-no-result {
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--text-light);
+  }
+</style>
+
+<script>
+  const searchInput = document.getElementById('search-input');
+  const dropdown = document.getElementById('search-dropdown');
+  const spinner = document.getElementById('search-spinner');
+  const clearBtn = document.getElementById('clear-btn');
+  let debounceTimer = null;
+
+  // Couleurs et icônes selon le type de document
+  const typeConfig = {
+    'COUR': { color: '#3b82f6', bg: '#eff6ff', icon: 'fa-book', label: 'Cours' },
+    'TP': { color: '#10b981', bg: '#f0fdf4', icon: 'fa-laptop-code', label: 'TP' },
+    'EXAM': { color: '#ef4444', bg: '#fef2f2', icon: 'fa-file-signature', label: 'Examen' },
+  };
+
+  // Mettre en surbrillance le mot recherché dans le texte
+  function highlight(text, query) {
+    if (!query) return text;
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<mark style="background:#fef08a; border-radius:3px; padding:0 2px;">$1</mark>');
+  }
+
+  function showDropdown(results, query) {
+    if (results.length === 0) {
+      dropdown.innerHTML = `
+            <div class="search-no-result">
+                <i class="fas fa-search" style="font-size:1.5rem; margin-bottom:8px; display:block; opacity:0.4;"></i>
+                Aucun résultat pour "<strong>${query}</strong>"
+            </div>`;
+      dropdown.style.display = 'block';
+      return;
+    }
+
+    // Séparer les résultats par catégorie
+    const documents = results.filter(r => r.type === 'document');
+    const subjects = results.filter(r => r.type === 'subject');
+    const levels = results.filter(r => r.type === 'level');
+
+    let html = '';
+
+    // ── Section Documents ──
+    if (documents.length > 0) {
+      html += `<div class="search-header">
+                    <i class="fas fa-file-pdf"></i> Documents (${documents.length})
+                 </div>`;
+      documents.forEach(doc => {
+        const cfg = typeConfig[doc.doc_type_code] || typeConfig['COUR'];
+        html += `
+                <a class="search-result-item" href="${doc.file_url || doc.nav_url}" 
+                   ${doc.file_url ? 'target="_blank"' : ''}>
+                    <div class="result-icon" style="background:${cfg.bg}; color:${cfg.color};">
+                        <i class="fas ${cfg.icon}"></i>
+                    </div>
+                    <div class="result-text">
+                        <div class="result-title">${highlight(doc.title, query)}</div>
+                        <div class="result-meta">
+                            <i class="fas fa-graduation-cap" style="font-size:0.7rem;"></i> ${doc.level}
+                            &nbsp;·&nbsp;
+                            <i class="fas fa-tags" style="font-size:0.7rem;"></i> ${doc.subject}
+                            &nbsp;·&nbsp; ${doc.date}
+                        </div>
+                    </div>
+                    <span class="result-badge" style="background:${cfg.bg}; color:${cfg.color};">
+                        ${doc.doc_type}
+                    </span>
+                </a>`;
+      });
+    }
+
+    // ── Section Matières ──
+    if (subjects.length > 0) {
+      html += `<div class="search-header">
+                    <i class="fas fa-book"></i> Matières (${subjects.length})
+                 </div>`;
+      subjects.forEach(sub => {
+        html += `
+                <a class="search-result-item" href="${sub.nav_url}">
+                    <div class="result-icon" style="background:#e0f2fe; color:#0ea5e9;">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="result-text">
+                        <div class="result-title">${highlight(sub.title, query)}</div>
+                        <div class="result-meta">
+                            <i class="fas fa-graduation-cap" style="font-size:0.7rem;"></i> ${sub.subtitle}
+                        </div>
+                    </div>
+                    <span class="result-badge" style="background:#e0f2fe; color:#0ea5e9;">
+                        Matière
+                    </span>
+                </a>`;
+      });
+    }
+
+    // ── Section Années ──
+    if (levels.length > 0) {
+      html += `<div class="search-header">
+                    <i class="fas fa-graduation-cap"></i> Années (${levels.length})
+                 </div>`;
+      levels.forEach(lvl => {
+        html += `
+                <a class="search-result-item" href="${lvl.nav_url}">
+                    <div class="result-icon" style="background:#f3e8ff; color:#9333ea;">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="result-text">
+                        <div class="result-title">${highlight(lvl.title, query)}</div>
+                        <div class="result-meta">${lvl.subtitle}</div>
+                    </div>
+                    <span class="result-badge" style="background:#f3e8ff; color:#9333ea;">
+                        Année
+                    </span>
+                </a>`;
+      });
+    }
+
+    dropdown.innerHTML = html;
+    dropdown.style.display = 'block';
+  }
+
+  function clearSearch() {
+    searchInput.value = '';
+    dropdown.style.display = 'none';
+    clearBtn.style.display = 'none';
+    searchInput.focus();
+  }
+
+  // Écouter chaque frappe clavier
+  searchInput.addEventListener('input', function () {
+    const query = this.value.trim();
+
+    // Afficher/cacher le bouton ✕
+    clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+
+    if (query.length < 2) {
+      dropdown.style.display = 'none';
+      spinner.style.display = 'none';
+      return;
+    }
+
+    // Debounce : on attend 300ms après la dernière frappe pour éviter
+    // d'envoyer une requête à chaque lettre (comme Google le fait)
+    clearTimeout(debounceTimer);
+    spinner.style.display = 'block';
+
+    debounceTimer = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/search/?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        showDropdown(data.results, query);
+      } catch (err) {
+        console.error('Erreur recherche:', err);
+      } finally {
+        spinner.style.display = 'none';
+      }
+    }, 300);
+  });
+
+  // Fermer le dropdown si on clique ailleurs sur la page
+  document.addEventListener('click', function (e) {
+    if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+
+  // Rouvrir le dropdown si on refocus la barre et qu'elle a du contenu
+  searchInput.addEventListener('focus', function () {
+    if (this.value.trim().length >= 2 && dropdown.innerHTML !== '') {
+      dropdown.style.display = 'block';
+    }
+  });
+</script>
 {% endblock %}
