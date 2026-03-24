@@ -51,19 +51,19 @@
     {% if step == 'subjects' %}
     <p>Modules de : <strong>{{ current_level.get_name_display }}</strong></p>
     <a href="{% url 'library' %}" class="btn-primary"
-      style="text-decoration: none; padding: 8px 15px; border-radius: 5px;">
+      style="text-decoration: none; padding: 8px 15px; border-radius: 5px; margin-top: 10px; display: inline-block;">
       ← Retour aux années
     </a>
     {% elif step == 'types' %}
     <p>Catégories pour : <strong>{{ current_subject.name }}</strong></p>
     <a href="?level={{ level_id }}" class="btn-primary"
-      style="text-decoration: none; padding: 8px 15px; border-radius: 5px;">
+      style="text-decoration: none; padding: 8px 15px; border-radius: 5px; margin-top: 10px; display: inline-block;">
       ← Retour aux modules
     </a>
     {% elif step == 'files' %}
     <p>Fichiers : <strong>{{ type_name }}</strong> — {{ current_subject.name }}</p>
     <a href="?level={{ level_id }}&subject={{ current_subject.id }}" class="btn-primary"
-      style="text-decoration: none; padding: 8px 15px; border-radius: 5px;">
+      style="text-decoration: none; padding: 8px 15px; border-radius: 5px; margin-top: 10px; display: inline-block;">
       ← Retour aux catégories
     </a>
     {% else %}
@@ -125,7 +125,7 @@
   {% elif step == 'subjects' %}
   {% for subject in subjects %}
   <a href="?level={{ current_level.id }}&subject={{ subject.id }}" class="book-card"
-    style="text-decoration: none; cursor: pointer;">
+    style="text-decoration: none; padding: 8px 15px; border-radius: 5px; margin-top: 10px; display: inline-block">
     <div class="card-img" style="background: var(--hover-bg);">
       <i class="fas fa-book fa-3x" style="color: #0ea5e9;"></i>
     </div>
@@ -144,7 +144,7 @@
   <a href="?level={{ level_id }}&subject={{ current_subject.id }}&type={{ type_code }}" class="book-card"
     style="text-decoration: none; cursor: pointer;">
     <div class="card-img" style="background: var(--hover-bg);">
-      {% if type_code == 'COUR' %}
+      {% if type_code == 'COURS' %}
       <i class="fas fa-chalkboard-teacher fa-3x" style="color: var(--primary-color);"></i>
       {% elif type_code == 'TP' %}
       <i class="fas fa-laptop-code fa-3x" style="color: #10b981;"></i>
@@ -159,23 +159,96 @@
   {% endfor %}
 
   {% elif step == 'files' %}
+
+  <!-- Barre de filtres avec liens -->
+  <div style="grid-column: 1 / -1; display: flex; gap: 10px; 
+            flex-wrap: wrap; margin-bottom: 10px;">
+
+    <a href="?level={{ level_id }}&subject={{ current_subject.id }}&type=COURS" id="filter-COURS" style="padding: 8px 18px; border-radius: 20px; border: 2px solid #3b82f6;
+            background: transparent; color: #3b82f6;
+            font-weight: 600; font-size: 0.85rem;
+            text-decoration: none; transition: all 0.2s;">
+      <i class="fas fa-chalkboard-teacher"></i> Cours
+    </a>
+
+    <a href="?level={{ level_id }}&subject={{ current_subject.id }}&type=TP" id="filter-TP" style="padding: 8px 18px; border-radius: 20px; border: 2px solid #10b981;
+            background: transparent; color: #10b981;
+            font-weight: 600; font-size: 0.85rem;
+            text-decoration: none; transition: all 0.2s;">
+      <i class="fas fa-laptop-code"></i> TP & TD
+    </a>
+
+    <a href="?level={{ level_id }}&subject={{ current_subject.id }}&type=EXAM" id="filter-EXAM" style="padding: 8px 18px; border-radius: 20px; border: 2px solid #ef4444;
+            background: transparent; color: #ef4444;
+            font-weight: 600; font-size: 0.85rem;
+            text-decoration: none; transition: all 0.2s;">
+      <i class="fas fa-file-signature"></i> Examens
+    </a>
+
+    <!-- Compteur -->
+    <span id="filter-count" style="margin-left: auto; align-self: center;
+               font-size: 0.85rem; color: var(--text-light);">
+      {{ documents|length }} document(s)
+    </span>
+  </div>
+
+  <!-- Documents avec attribut data-type pour le filtre JS -->
   {% for doc in documents %}
-  <div class="book-card">
+  <div class="book-card" data-type="{{ doc.doc_type }}">
     <div class="card-img" style="background: var(--hover-bg);">
-      <i class="fas fa-file-pdf fa-3x" style="color: #ef4444;"></i>
+      {% if doc.doc_type == 'COURS' %}
+      <i class="fas fa-chalkboard-teacher fa-3x" style="color: var(--primary-color);"></i>
+      {% elif doc.doc_type == 'TP' %}
+      <i class="fas fa-laptop-code fa-3x" style="color: #10b981;"></i>
+      {% elif doc.doc_type == 'EXAM' %}
+      <i class="fas fa-file-signature fa-3x" style="color: #ef4444;"></i>
+      {% endif %}
     </div>
     <div class="card-info">
+      <!-- Badge type -->
+      {% if doc.doc_type == 'COURS' %}
+      <span style="font-size:0.75rem; font-weight:700; padding:3px 10px;
+               border-radius:20px; display:inline-block; margin-bottom:8px;
+               background:#eff6ff; color:#3b82f6;">
+        {{ doc.get_doc_type_display }}
+      </span>
+      {% elif doc.doc_type == 'TP' %}
+      <span style="font-size:0.75rem; font-weight:700; padding:3px 10px;
+               border-radius:20px; display:inline-block; margin-bottom:8px;
+               background:#f0fdf4; color:#10b981;">
+        {{ doc.get_doc_type_display }}
+      </span>
+      {% elif doc.doc_type == 'EXAM' %}
+      <span style="font-size:0.75rem; font-weight:700; padding:3px 10px;
+               border-radius:20px; display:inline-block; margin-bottom:8px;
+               background:#fef2f2; color:#ef4444;">
+        {{ doc.get_doc_type_display }}
+      </span>
+      {% endif %}
       <h3>{{ doc.title }}</h3>
       <p style="color: var(--text-light); font-size: 0.85rem;">
         Ajouté le {{ doc.uploaded_at|date:"d/m/Y" }}
       </p>
+      <!-- Bouton Favori ← NOUVEAU -->
+      {% if user.is_authenticated %}
+      <button onclick="toggleFavori({{ doc.id }}, this)"
+        class="btn-favori {% if doc.id in fav_ids %}btn-favori-active{% endif %}">
+        {% if doc.id in fav_ids %}
+        <i class="fas fa-star"></i> Sauvegardé
+        {% else %}
+        <i class="far fa-star"></i> Sauvegarder
+        {% endif %}
+      </button>
+      {% endif %}
       {% if doc.file_doc %}
-      <a href="{{ doc.file_doc.url }}" target="_blank" class="btn-card"
-        style="text-align: center; display: block; margin-top: auto;">
-        Ouvrir le PDF
-      </a>
+      <button onclick="openPDF('{{ doc.file_doc.url }}', '{{ doc.title }}')" class="btn-card" style="text-align: center; display: block; margin-top: auto;
+               width: 100%; border: none; cursor: pointer;">
+        <i class="fas fa-eye"></i> Prévisualiser
+      </button>
       {% else %}
-      <button class="btn-card" disabled style="background-color: grey;">Fichier indisponible</button>
+      <button class="btn-card" disabled style="background-color: grey;">
+        Fichier indisponible
+      </button>
       {% endif %}
     </div>
   </div>
@@ -185,9 +258,55 @@
   </p>
   {% endfor %}
 
+  <!-- Message "aucun résultat" pour le filtre JS -->
+  <p id="no-filter-result" style="display:none; grid-column: 1 / -1; text-align: center; color: var(--text-light);">
+    Aucun document de ce type dans ce dossier.
+  </p>
   {% endif %}
-
 </section>
+<!-- Panneau de prévisualisation PDF -->
+<div id="pdf-overlay" onclick="closePDF(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.6); z-index:2000; align-items:center;
+            justify-content:center;">
+
+  <div style="background:var(--card-bg); border-radius:16px; width:90%; max-width:900px;
+              height:88vh; display:flex; flex-direction:column;
+              box-shadow:0 20px 60px rgba(0,0,0,0.3);" onclick="event.stopPropagation()">
+
+    <!-- En-tête du panneau -->
+    <div style="display:flex; align-items:center; justify-content:space-between;
+                padding:16px 20px; border-bottom:1px solid var(--input-border);
+                flex-shrink:0;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <i class="fas fa-file-pdf" style="color:#ef4444; font-size:1.2rem;"></i>
+        <span id="pdf-title" style="font-weight:600; font-size:1rem;"></span>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <a id="pdf-download" href="#" target="_blank" style="padding:8px 14px; background:var(--primary-color); color:white;
+                  border-radius:8px; text-decoration:none; font-size:0.85rem;
+                  font-weight:600;">
+          <i class="fas fa-download"></i> Télécharger
+        </a>
+        <button onclick="closePDF()" style="padding:8px 14px; background:var(--hover-bg);
+                       border:1px solid var(--input-border); border-radius:8px;
+                       cursor:pointer; color:var(--text-dark); font-size:0.85rem;">
+          <i class="fas fa-times"></i> Fermer
+        </button>
+      </div>
+    </div>
+
+    <!-- iframe PDF -->
+    <object id="pdf-frame" data="" type="application/pdf"
+      style="flex:1; border:none; border-radius:0 0 16px 16px; width:100%; height:100%;">
+      <p style="text-align:center; padding:40px; color:var(--text-light);">
+        Votre navigateur ne supporte pas la prévisualisation.
+        <a id="pdf-fallback" href="#" target="_blank" style="color:var(--primary-color);">
+          Cliquez ici pour ouvrir le PDF
+        </a>
+      </p>
+    </object>
+  </div>
+</div>
 <style>
   @keyframes spin {
     to {
@@ -268,7 +387,26 @@
     text-align: center;
     color: var(--text-light);
   }
+.btn-favori {
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid var(--input-border);
+  background: transparent;
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+.btn-favori-active {
+  border-color: #f59e0b;
+  background: rgba(245,158,11,0.1);
+  color: #f59e0b;
+}
 </style>
+
+
 
 <script>
   const searchInput = document.getElementById('search-input');
@@ -439,5 +577,136 @@
       dropdown.style.display = 'block';
     }
   });
+  // ═══════════════════════════════════════
+  // Filtres par type de document
+  // ═══════════════════════════════════════
+  function filterDocs(type) {
+    const cards = document.querySelectorAll('.book-card[data-type]');
+    const noResult = document.getElementById('no-filter-result');
+    const countLabel = document.getElementById('filter-count');
+
+    // Couleurs des boutons
+    const config = {
+      'COURS': { id: 'filter-COURS', bg: '#3b82f6', color: 'white', border: '#3b82f6' },
+      'TP': { id: 'filter-TP', bg: '#10b981', color: 'white', border: '#10b981' },
+      'EXAM': { id: 'filter-EXAM', bg: '#ef4444', color: 'white', border: '#ef4444' },
+    };
+
+    // Réinitialiser tous les boutons
+    Object.keys(config).forEach(key => {
+      const btn = document.getElementById(config[key].id);
+      if (!btn) return;
+      btn.style.background = 'transparent';
+      btn.style.color = config[key].border;
+    });
+
+    // Activer le bouton sélectionné
+    const active = config[type];
+    const activeBtn = document.getElementById(active.id);
+    if (activeBtn) {
+      activeBtn.style.background = active.bg;
+      activeBtn.style.color = active.color;
+    }
+
+    // Filtrer les cartes
+    let visibleCount = 0;
+    cards.forEach(card => {
+      const show = (type === 'all' || card.dataset.type === type);
+      card.style.display = show ? '' : 'none';
+      if (show) visibleCount++;
+    });
+
+    // Mettre à jour le compteur
+    if (countLabel) {
+      countLabel.textContent = visibleCount + ' document(s)';
+    }
+
+    // Afficher message si aucun résultat
+    if (noResult) {
+      noResult.style.display = (visibleCount === 0) ? 'block' : 'none';
+    }
+  }
+  // Activer le bouton correspondant au type dans l'URL au chargement
+  document.addEventListener('DOMContentLoaded', function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentType = urlParams.get('type');
+
+    if (currentType) {
+      filterDocs(currentType);
+    }
+  });
+  // ═══════════════════════════════════════
+  // Prévisualisation PDF
+  // ═══════════════════════════════════════
+  function openPDF(url, title) {
+    const obj = document.getElementById('pdf-frame');
+    obj.data = url;
+
+    document.getElementById('pdf-title').textContent = title;
+    document.getElementById('pdf-download').href = url;
+
+    // Lien de secours
+    const fallback = document.getElementById('pdf-fallback');
+    if (fallback) fallback.href = url;
+
+    document.getElementById('pdf-overlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePDF(event) {
+    if (event && event.target !== document.getElementById('pdf-overlay')) return;
+    document.getElementById('pdf-frame').data = '';
+    document.getElementById('pdf-overlay').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      document.getElementById('pdf-frame').data = '';
+      document.getElementById('pdf-overlay').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  });
+  // Fermer avec la touche Échap
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      document.getElementById('pdf-overlay').style.display = 'none';
+      document.getElementById('pdf-frame').src = '';
+      document.body.style.overflow = '';
+    }
+  });
+
+  function getCsrfToken() {
+    const cookies = document.cookie.split(';');
+    for (let c of cookies) {
+      c = c.trim();
+      if (c.startsWith('csrftoken=')) return c.substring('csrftoken='.length);
+    }
+    return '';
+  }
+
+  async function toggleFavori(docId, btn) {
+    try {
+      const res = await fetch(`/api/favoris/${docId}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrfToken() },
+      });
+      const data = await res.json();
+
+      if (data.is_fav) {
+        btn.innerHTML = '<i class="fas fa-star"></i> Favori';
+        btn.style.borderColor = '#f59e0b';
+        btn.style.background = 'rgba(245,158,11,0.1)';
+        btn.style.color = '#f59e0b';
+      } else {
+        btn.innerHTML = '<i class="far fa-star"></i> Ajouter aux favoris';
+        btn.style.borderColor = 'var(--input-border)';
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--text-light)';
+      }
+    } catch (err) {
+      console.error('Erreur favori:', err);
+    }
+  }
 </script>
 {% endblock %}

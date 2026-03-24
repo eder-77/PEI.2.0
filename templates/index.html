@@ -1,18 +1,200 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+
+{% if user.is_authenticated %}
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE D'ACCUEIL PERSONNALISÉE (connecté)     -->
+<!-- ═══════════════════════════════════════════ -->
+
+<!-- Salutation -->
+<div style="margin-bottom: 32px;">
+  <h1 style="margin-bottom: 6px;">
+    Bonjour, {{ user.get_full_name|default:user.username }} 👋
+  </h1>
+  <p style="color: var(--text-light); margin: 0;">
+    {% if profile.year %}
+    {{ profile.get_year_display }} —
+    {% endif %}
+    Bienvenue sur votre espace PEI.
+  </p>
+</div>
+
+<!-- Cartes de navigation rapide -->
+<section class="services-section" style="padding-top: 0;">
+  <h2 class="section-title" style="text-align:left; margin-bottom: 20px;">
+    Accès rapide
+  </h2>
+  <div class="services-container">
+
+    <a href="{% url 'library' %}" class="service-card" style="text-decoration:none; cursor:pointer;">
+      <i class="fas fa-book-open icon"></i>
+      <h3>Bibliothèque</h3>
+      <p>Accédez à vos cours, TP et examens.</p>
+    </a>
+
+    <a href="{% url 'tutor' %}" class="service-card" style="text-decoration:none; cursor:pointer;">
+      <i class="fas fa-microchip icon"></i>
+      <h3>Tuteur IA</h3>
+      <p>Posez vos questions à l'assistant intelligent.</p>
+    </a>
+
+    <a href="{% url 'profile' %}" class="service-card" style="text-decoration:none; cursor:pointer;">
+      <i class="fas fa-user-circle icon"></i>
+      <h3>Mon Profil</h3>
+      <p>Gérez vos informations personnelles.</p>
+    </a>
+
+  </div>
+</section>
+
+<!-- Statistiques rapides -->
+<section style="margin-top: 32px;">
+  <h2 class="section-title" style="text-align:left; margin-bottom: 6px;">
+    La bibliothèque en chiffres
+  </h2>
+
+  <!-- Sous-titre dynamique selon l'année -->
+  <p style="color: var(--text-light); margin: 0 0 20px; font-size: 0.9rem;">
+    {% if niveau_label %}
+      Statistiques pour votre promotion : <strong>{{ niveau_label }}</strong>
+    {% else %}
+      Choisissez votre année dans 
+      <a href="{% url 'profile' %}" style="color: var(--primary-color);">
+        votre profil
+      </a> 
+      pour voir les stats de votre promotion.
+    {% endif %}
+  </p>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+              gap: 16px;">
+
+    <div style="background: var(--card-bg); border-radius: 14px; padding: 24px;
+                text-align: center; border: 1px solid var(--input-border);">
+      <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color);">
+        {{ total_docs }}
+      </div>
+      <div style="color: var(--text-light); font-size: 0.85rem; margin-top: 4px;">
+        Documents
+      </div>
+    </div>
+
+    <div style="background: var(--card-bg); border-radius: 14px; padding: 24px;
+                text-align: center; border: 1px solid var(--input-border);">
+      <div style="font-size: 2rem; font-weight: 700; color: #10b981;">
+        {{ total_subjects }}
+      </div>
+      <div style="color: var(--text-light); font-size: 0.85rem; margin-top: 4px;">
+        Matières
+      </div>
+    </div>
+
+    <div style="background: var(--card-bg); border-radius: 14px; padding: 24px;
+                text-align: center; border: 1px solid var(--input-border);">
+      <div style="font-size: 2rem; font-weight: 700; color: #f59e0b;">
+        {{ total_tp }}
+      </div>
+      <div style="color: var(--text-light); font-size: 0.85rem; margin-top: 4px;">
+        TP & TD
+      </div>
+    </div>
+
+    <div style="background: var(--card-bg); border-radius: 14px; padding: 24px;
+                text-align: center; border: 1px solid var(--input-border);">
+      <div style="font-size: 2rem; font-weight: 700; color: #ef4444;">
+        {{ total_exams }}
+      </div>
+      <div style="color: var(--text-light); font-size: 0.85rem; margin-top: 4px;">
+        Examens
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Derniers documents ajoutés -->
+{% if recent_docs %}
+<section style="margin-top: 32px;">
+  <h2 class="section-title" style="text-align:left; margin-bottom: 20px
+    Derniers documents ajoutés
+  </h2>
+  <div style="background: var(--card-bg); border-radius: 14px;
+                border: 1px solid var(--input-border); overflow: hidden;">
+    {% for doc in recent_docs %}
+    <div style="display: flex; align-items: center; gap: 16px;
+                  padding: 14px 20px;
+                  {% if not forloop.last %}border-bottom: 1px solid var(--input-border);{% endif %}">
+
+      <!-- Icône selon type -->
+      <!-- Icône selon type -->
+      {% if doc.doc_type == 'COURS' %}
+      <div style="width:40px; height:40px; border-radius:10px; flex-shrink:0;
+              display:flex; align-items:center; justify-content:center;
+              background:#eff6ff;">
+        <i class="fas fa-book" style="color:#3b82f6;"></i>
+      </div>
+      {% elif doc.doc_type == 'TP' %}
+      <div style="width:40px; height:40px; border-radius:10px; flex-shrink:0;
+              display:flex; align-items:center; justify-content:center;
+              background:#f0fdf4;">
+        <i class="fas fa-laptop-code" style="color:#10b981;"></i>
+      </div>
+      {% else %}
+      <div style="width:40px; height:40px; border-radius:10px; flex-shrink:0;
+              display:flex; align-items:center; justify-content:center;
+              background:#fef2f2;">
+        <i class="fas fa-file-signature" style="color:#ef4444;"></i>
+      </div>
+      {% endif %}
+
+      <!-- Infos -->
+      <div style="flex: 1; min-width: 0;">
+        <div style="font-weight: 600; font-size: 0.95rem;
+                      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          {{ doc.title }}
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-light); margin-top: 2px;">
+          {{ doc.subject.name }} · {{ doc.subject.level.get_name_display }}
+        </div>
+      </div>
+
+      <!-- Date + bouton -->
+      <div style="font-size: 0.78rem; color: var(--text-light); flex-shrink: 0;">
+        {{ doc.uploaded_at|date:"d/m/Y" }}
+      </div>
+
+      {% if doc.file_doc %}
+      <a href="{{ doc.file_doc.url }}" target="_blank" style="flex-shrink: 0; padding: 6px 14px; background: var(--primary-color);
+                  color: white; border-radius: 8px; text-decoration: none;
+                  font-size: 0.8rem; font-weight: 600;">
+        Ouvrir
+      </a>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% else %}
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE D'ACCUEIL PUBLIQUE (non connecté)      -->
+<!-- ═══════════════════════════════════════════ -->
+
 <header class="hero-section">
   <div class="hero-content">
     <h1>PEI <br /><span>Plateforme Éducative Intelligente</span></h1>
     <p>
-      Une plateforme éducative révolutionnaire basée sur l’intelligence
-      artificielle. Nous offrons un environnement d’apprentissage
+      Une plateforme éducative révolutionnaire basée sur l'intelligence
+      artificielle. Nous offrons un environnement d'apprentissage
       confortable et une variété de ressources pour transformer votre
       expérience universitaire.
     </p>
     <div class="hero-buttons">
-      <a href="#" class="btn-primary">Commencer</a>
-      <a href="#" class="btn-secondary">En savoir plus</a>
+      <a href="{% url 'login' %}" class="btn-primary">Commencer</a>
+      <a href="#services" class="btn-secondary">En savoir plus</a>
     </div>
   </div>
   <div class="hero-image">
@@ -20,7 +202,7 @@
   </div>
 </header>
 
-<section class="services-section">
+<section class="services-section" id="services">
   <h2 class="section-title">Nos Fonctionnalités</h2>
   <div class="services-container">
     <div class="service-card">
@@ -28,19 +210,16 @@
       <h3>Bibliothèque</h3>
       <p>Accédez à des milliers de ressources et livres numériques.</p>
     </div>
-
     <div class="service-card">
       <i class="fas fa-microchip icon"></i>
       <h3>Tuteur IA</h3>
       <p>Un assistant intelligent pour répondre à vos questions 24/7.</p>
     </div>
-
     <div class="service-card">
       <i class="fas fa-lightbulb icon"></i>
       <h3>Système de Recommandation</h3>
       <p>Des suggestions de cours adaptées à votre profil.</p>
     </div>
-
     <div class="service-card">
       <i class="fas fa-calendar-alt icon"></i>
       <h3>Planificateur</h3>
@@ -48,4 +227,7 @@
     </div>
   </div>
 </section>
+
+{% endif %}
+
 {% endblock %}

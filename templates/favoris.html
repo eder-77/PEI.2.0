@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="fas fa-star" style="color:#f59e0b;"></i> Mes Favoris</h1>
+  <p style="color:var(--text-light);">
+    {{ favoris|length }} document(s) sauvegardé(s)
+  </p>
+</div>
+
+<section class="library-container">
+  {% for fav in favoris %}
+  <div class="book-card">
+    <div class="card-img" style="background: var(--hover-bg);">
+      {% if fav.document.doc_type == 'COURS' %}
+        <i class="fas fa-chalkboard-teacher fa-3x" style="color:var(--primary-color);"></i>
+      {% elif fav.document.doc_type == 'TP' %}
+        <i class="fas fa-laptop-code fa-3x" style="color:#10b981;"></i>
+      {% elif fav.document.doc_type == 'EXAM' %}
+        <i class="fas fa-file-signature fa-3x" style="color:#ef4444;"></i>
+      {% endif %}
+    </div>
+    <div class="card-info">
+      <span style="font-size:0.75rem; color:var(--text-light);">
+        {{ fav.document.subject.level.get_name_display }}
+        → {{ fav.document.subject.name }}
+        → {{ fav.document.get_doc_type_display }}
+      </span>
+      <h3>{{ fav.document.title }}</h3>
+      <p style="font-size:0.78rem; color:var(--text-light);">
+        Sauvegardé le {{ fav.added_at|date:"d/m/Y" }}
+      </p>
+      {% if fav.document.file_doc %}
+      <button onclick="openPDF('{{ fav.document.file_doc.url }}', '{{ fav.document.title }}')"
+              class="btn-card"
+              style="text-align:center; display:block; width:100%;
+                     border:none; cursor:pointer;">
+        <i class="fas fa-eye"></i> Prévisualiser
+      </button>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div style="grid-column:1/-1; text-align:center; padding:60px 20px;
+              color:var(--text-light);">
+    <i class="fas fa-star" style="font-size:3rem; opacity:0.2; display:block; margin-bottom:16px;"></i>
+    <p>Vous n'avez pas encore de favoris.</p>
+    <a href="{% url 'library' %}" class="btn-primary"
+       style="text-decoration:none; padding:10px 24px; border-radius:10px;
+              display:inline-block; margin-top:12px;">
+      Parcourir la bibliothèque
+    </a>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

@@ -1,146 +1,192 @@
-<!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tuteur IA - PEI</title>
-    <link rel="stylesheet" href="../style.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-    />
+{% extends 'base.html' %}
+{% load static %}
 
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Open+Sans:wght@400;600&display=swap"
-      rel="stylesheet"
-    />
-    <script>
-      // Ce script s'exécute immédiatement avant que le corps de la page ne s'affiche
-      (function () {
-        const savedTheme = localStorage.getItem("theme") || "light";
-        if (savedTheme === "dark") {
-          document.documentElement.setAttribute("data-theme", "dark");
-        }
-      })();
-    </script>
-  </head>
+{% block content %}
+<div class="chat-layout">
 
-  <body style="overflow: hidden">
-    <nav class="navbar">
-      <div class="logo">
-        <img src="../images/enpei.png" alt="Logo" /><span>PEI</span>
-      </div>
-      <ul class="nav-links">
-        <li><a href="../index.html">Accueil</a></li>
-        <li><a href="../library/library.html">Bibliothèque</a></li>
-        <li><a href="tutor.html" class="active">Tuteur IA</a></li>
-        <li>
-          <a href="../recommendation/recommendation.html">Recommandations</a>
+  <!-- Sidebar -->
+  <aside class="chat-sidebar">
+    <div class="sidebar-section">
+      <h3><i class="fas fa-shapes"></i> Modules</h3>
+      <ul class="module-list">
+        <li class="active-module">
+          <i class="fas fa-graduation-cap"></i> Tuteur Général
         </li>
-        <li><a href="../planner/planner.html">Planificateur</a></li>
-        <li>
-          <button
-            id="theme-toggle"
-            style="
-              background: none;
-              border: none;
-              cursor: pointer;
-              color: var(--text-dark);
-              font-size: 1.2rem;
-            "
-          >
-            <i class="fas fa-moon"></i>
-          </button>
-        </li>
-        <li>
-          <a href="../account/account.html" class="btn-account">Compte</a>
-        </li>
+        <li><i class="fas fa-square-root-alt"></i> Solveur Maths</li>
+        <li><i class="fas fa-code"></i> Assistant Code</li>
+        <li><i class="fas fa-language"></i> Prof de Langues</li>
       </ul>
-      <div class="burger"><i class="fas fa-bars"></i></div>
-    </nav>
-
-    <div class="chat-layout">
-      <aside class="chat-sidebar">
-        <div class="sidebar-section">
-          <h3><i class="fas fa-shapes"></i> Modules</h3>
-          <ul class="module-list">
-            <li class="active-module">
-              <i class="fas fa-graduation-cap"></i> Tuteur Général
-            </li>
-            <li><i class="fas fa-square-root-alt"></i> Solveur Maths</li>
-            <li><i class="fas fa-code"></i> Assistant Code</li>
-            <li><i class="fas fa-language"></i> Prof de Langues</li>
-          </ul>
-        </div>
-
-        <hr class="sidebar-divider" />
-
-        <div class="sidebar-section">
-          <h3><i class="fas fa-history"></i> Historique</h3>
-          <ul class="history-list">
-            <li>Dérivées partielles (Maths)</li>
-            <li>Correction essai philo</li>
-            <li>Bug Python listes</li>
-          </ul>
-        </div>
-      </aside>
-
-      <main class="chat-main">
-        <div class="chat-options-header">
-          <div class="model-selector">
-            <label for="ai-model"
-              ><i class="fas fa-brain"></i> Modèle IA :</label
-            >
-            <select id="ai-model">
-              <option value="pei-fast">PEI Standard (Rapide)</option>
-              <option value="pei-smart">PEI Plus (Précis - GPT-4)</option>
-              <option value="pei-science">PEI Science (Spécialisé)</option>
-            </select>
-          </div>
-          <div class="chat-actions">
-            <button title="Effacer la conversation">
-              <i class="fas fa-trash-alt"></i>
-            </button>
-            <button title="Télécharger"><i class="fas fa-download"></i></button>
-          </div>
-        </div>
-
-        <div class="chat-window">
-          <div class="message ai-msg">
-            <strong>Module : Tuteur Général</strong><br />
-            Bonjour ! Je suis configuré pour t'aider dans toutes les matières.
-            Choisis un modèle ci-dessus si tu as besoin de plus de précision.
-          </div>
-
-          <div class="message user-msg">
-            Quelle est la différence entre la mitose et la méiose ?
-          </div>
-
-          <div class="message ai-msg">
-            La principale différence réside dans leur fonction :
-            <ul>
-              <li>
-                <b>La mitose</b> produit deux cellules identiques (croissance,
-                réparation).
-              </li>
-              <li>
-                <b>La méiose</b> produit quatre cellules sexuelles génétiquement
-                uniques.
-              </li>
-            </ul>
-            Veux-tu un schéma explicatif ?
-          </div>
-        </div>
-
-        <div class="chat-input-area">
-          <button class="btn-attach"><i class="fas fa-paperclip"></i></button>
-          <input type="text" placeholder="Posez votre question au tuteur..." />
-          <button class="btn-send"><i class="fas fa-paper-plane"></i></button>
-        </div>
-      </main>
     </div>
 
-    <script src="../script.js"></script>
-  </body>
-</html>
+    <hr class="sidebar-divider" />
+
+    <!-- Historique depuis la base de données -->
+    <div class="sidebar-section">
+      <h3><i class="fas fa-history"></i> Historique</h3>
+      <ul class="history-list">
+        {% for msg in messages_history %}
+          {% if msg.role == 'user' %}
+            <li title="{{ msg.content }}">
+              <i class="fas fa-user" style="font-size:0.75rem; margin-right:6px;"></i>
+              {{ msg.content|truncatechars:35 }}
+            </li>
+          {% endif %}
+        {% empty %}
+          <li style="color:var(--text-light); font-size:0.85rem;">
+            Aucun historique
+          </li>
+        {% endfor %}
+      </ul>
+
+      <!-- Bouton effacer historique -->
+      {% if messages_history %}
+      <form method="POST" action="{% url 'clear_history' %}"
+            style="margin-top: 12px;">
+        {% csrf_token %}
+        <button type="submit"
+                style="width:100%; padding:8px; border-radius:8px;
+                       background:rgba(239,68,68,0.1); color:#ef4444;
+                       border:1px solid rgba(239,68,68,0.3);
+                       cursor:pointer; font-size:0.85rem;">
+          <i class="fas fa-trash-alt"></i> Effacer l'historique
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- Zone principale chat -->
+  <main class="chat-main">
+    <div class="chat-options-header">
+      <div class="model-selector">
+        <label><i class="fas fa-brain"></i> Modèle IA :</label>
+        <select id="ai-model">
+          <option value="llava:7b">PEI Standard (llava:7b)</option>
+        </select>
+      </div>
+      <div class="chat-actions">
+        <form method="POST" action="{% url 'clear_history' %}"
+              style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" title="Effacer la conversation"
+                  style="background:none; border:none; cursor:pointer;
+                         color:var(--text-light); font-size:1rem;">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Fenêtre de chat -->
+    <div class="chat-window" id="chat-window">
+
+      <!-- Message de bienvenue -->
+      <div class="message ai-msg">
+        <strong>Tuteur IA — PEI</strong><br>
+        Bonjour {{ request.user.get_full_name|default:request.user.username }} ! 
+        Je suis votre assistant universitaire. Posez-moi vos questions sur 
+        vos cours, exercices ou examens.
+      </div>
+
+      <!-- Historique chargé depuis la base de données -->
+      {% for msg in messages_history %}
+        {% if msg.role == 'user' %}
+          <div class="message user-msg">{{ msg.content }}</div>
+        {% else %}
+          <div class="message ai-msg">{{ msg.content }}</div>
+        {% endif %}
+      {% endfor %}
+
+    </div>
+
+    <!-- Zone de saisie -->
+    <div class="chat-input-area">
+      <input type="text" id="user-input"
+             placeholder="Posez votre question au tuteur..."
+             autocomplete="off"/>
+      <button class="btn-send" id="send-btn" onclick="sendMessage()">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </main>
+</div>
+
+<script>
+  const chatWindow = document.getElementById('chat-window');
+  const userInput  = document.getElementById('user-input');
+  const sendBtn    = document.getElementById('send-btn');
+
+  // Scroll automatique vers le bas au chargement
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  // Envoyer avec la touche Entrée
+  userInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') sendMessage();
+  });
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      document.cookie.split(';').forEach(cookie => {
+        const c = cookie.trim();
+        if (c.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(c.substring(name.length + 1));
+        }
+      });
+    }
+    return cookieValue;
+  }
+
+  function addMessage(content, role) {
+    const div = document.createElement('div');
+    div.classList.add('message', role === 'user' ? 'user-msg' : 'ai-msg');
+    div.textContent = content;
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    return div;
+  }
+
+  async function sendMessage() {
+    const message = userInput.value.trim();
+    if (!message) return;
+
+    // Afficher le message utilisateur
+    addMessage(message, 'user');
+    userInput.value = '';
+    sendBtn.disabled = true;
+
+    // Indicateur de chargement
+    const loadingDiv = document.createElement('div');
+    loadingDiv.classList.add('message', 'ai-msg');
+    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> En cours de réflexion...';
+    chatWindow.appendChild(loadingDiv);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    try {
+      const response = await fetch('/api/chat/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ message: message }),
+      });
+
+      const data = await response.json();
+      loadingDiv.remove();
+
+      if (data.reply) {
+        addMessage(data.reply, 'assistant');
+      } else {
+        addMessage('Erreur : ' + (data.error || 'Réponse invalide'), 'assistant');
+      }
+    } catch (err) {
+      loadingDiv.remove();
+      addMessage('Erreur de connexion. Vérifiez qu\'Ollama est lancé.', 'assistant');
+    } finally {
+      sendBtn.disabled = false;
+      userInput.focus();
+    }
+  }
+</script>
+{% endblock %}
