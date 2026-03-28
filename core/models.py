@@ -127,6 +127,16 @@ def notify_students(sender, instance, created, **kwargs):
     ]
     Notification.objects.bulk_create(notifications)
 
+@receiver(post_save, sender=Document)
+def index_document_on_save(sender, instance, created, **kwargs):
+    """Indexe automatiquement le document dans ChromaDB à l'upload"""
+    if created:
+        try:
+            from .rag_service import index_document
+            index_document(instance)
+        except Exception as e:
+            print(f"Erreur indexation RAG: {e}")
+
 class Favori(models.Model):
     user     = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favoris')
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='favoris')
@@ -137,7 +147,17 @@ class Favori(models.Model):
         unique_together = ('user', 'document')  # Un seul favori par doc par user
 
     def __str__(self):
-        return f"{self.user.username} ♥ {self.document.title}"        
+        return f"{self.user.username} ♥ {self.document.title}"    
+
+
+class DocumentIndex(models.Model):
+    """Garde en mémoire quels documents ont été indexés dans ChromaDB"""
+    document   = models.OneToOneField(Document, on_delete=models.CASCADE, related_name='index')
+    indexed_at = models.DateTimeField(auto_now_add=True)
+    chunk_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"Index: {self.document.title} ({self.chunk_count} chunks)"        
 
 
 

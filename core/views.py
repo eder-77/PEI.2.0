@@ -146,10 +146,16 @@ def library(request):
         )
 
     # ÉTAPE 1 : Par défaut, quand on arrive sur la page (On affiche les Années)
+    # ÉTAPE 1 : Par défaut, quand on arrive sur la page (On affiche les Années)
     else:
-        levels = Level.objects.all()
+       YEAR_ORDER = ['1AP', '2ST', '2MI', '3ST', '3MI']
+       levels = []
+       for name in YEAR_ORDER:
+            level = Level.objects.filter(name=name).first()
+            if level:
+               levels.append(level)
 
-        return render(request, "library.html", {"step": "levels", "levels": levels})
+       return render(request, "library.html", {"step": "levels", "levels": levels})
 
 
 @login_required
@@ -157,54 +163,96 @@ def account(request):
     return redirect("profile")
 
 
-# On reprend les réglages de ton script rag.py
-SYSTEM_MESSAGE = """Tu es un assistant universitaire expert en algorithmes et programmation.
+@login_required
+def chat_api(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            user_message = data.get('message', '').strip()
+
+            if not user_message:
+                return JsonResponse({'error': 'Message vide'}, status=400)
+
+            profile, _ = StudentProfile.objects.get_or_create(user=request.user)
+
+            # ── Recherche RAG dans les documents ──
+            from .rag_service import search_documents
+            passages = search_documents(
+                query=user_message,
+                level_name=profile.year if profile.year else None,
+                n_results=4
+            )
+
+            # ── Construire le contexte depuis les passages trouvés ──
+            context = ""
+            sources = []
+            if passages:
+                context = "\n\n---\nVoici des extraits de vos cours qui peuvent aider :\n"
+                for p in passages:
+                    context += f"\n[{p['title']} — {p['subject']}, page {p['page']}]\n{p['text']}\n"
+                    if p['title'] not in sources:
+                        sources.append(p['title'])
+
+            # ── Message système personnalisé ──
+            year_context = ""
+            if profile.year:
+                year_context = f"L'étudiant est en {profile.get_year_display()}."
+
+            system_message = f"""Tu es un assistant universitaire expert pour la plateforme PEI.
+{year_context}
 Tes objectifs:
 - Expliquer clairement et de manière pédagogique
 - Fournir du code C complet avec commentaires si nécessaire
 - Répondre de façon concise mais complète
-- Être patient et encourageant avec les étudiants"""
+- Être patient et encourageant avec les étudiants
+- Répondre en français sauf si l'étudiant écrit en arabe
+- Si des extraits de cours sont fournis, base tes réponses dessus en priorité
+- Cite toujours la source (nom du document) quand tu utilises les extraits"""
 
-
-@login_required
-def chat_api(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            user_message = data.get("message", "").strip()
-
-            if not user_message:
-                return JsonResponse({"error": "Message vide"}, status=400)
-
-            # Sauvegarder le message utilisateur en base de données
-            ChatMessage.objects.create(
-                user=request.user, role="user", content=user_message
-            )
-
-            # Construire l'historique pour Ollama (50 derniers messages)
-            history = [{"role": "system", "content": SYSTEM_MESSAGE}]
-            past_messages = ChatMessage.objects.filter(user=request.user).order_by(
-                "created_at"
-            )[:50]
+            # ── Construire l'historique ──
+            history = [{"role": "system", "content": system_message}]
+            past_messages = ChatMessage.objects.filter(
+                user=request.user
+            ).order_by('created_at')[:50]
 
             for msg in past_messages:
                 history.append({"role": msg.role, "content": msg.content})
 
-            # Appel à Ollama
-            response = ollama.chat(model="llava:7b", messages=history)
-            assistant_reply = response["message"]["content"]
+            # Ajouter le contexte RAG au message utilisateur
+            message_with_context = user_message
+            if context:
+                message_with_context = f"{user_message}{context}"
 
-            # Sauvegarder la réponse de l'IA en base de données
+            history.append({"role": "user", "content": message_with_context})
+
+            # ── Appel Mistral ──
+            response = ollama.chat(model='mistral', messages=history)
+            assistant_reply = response['message']['content']
+
+            # Ajouter les sources à la réponse si trouvées
+            if sources:
+                sources_text = "\n\n📚 *Sources : " + ", ".join(sources) + "*"
+                assistant_reply += sources_text
+
+            # ── Sauvegarder en BDD ──
             ChatMessage.objects.create(
-                user=request.user, role="assistant", content=assistant_reply
+                user=request.user, role='user', content=user_message
+            )
+            ChatMessage.objects.create(
+                user=request.user, role='assistant', content=assistant_reply
             )
 
-            return JsonResponse({"reply": assistant_reply})
+            return JsonResponse({
+                'reply':   assistant_reply,
+                'sources': sources,
+                'rag_used': len(passages) > 0,
+            })
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
 
 
 def search_api(request):
@@ -279,14 +327,6 @@ def tutor(request):
     )[:50]
 
     return render(request, "tutor.html", {"messages_history": messages_history})
-
-
-SYSTEM_MESSAGE = """Tu es un assistant universitaire expert en algorithmes et programmation.
-Tes objectifs:
-- Expliquer clairement et de manière pédagogique
-- Fournir du code C complet avec commentaires si nécessaire
-- Répondre de façon concise mais complète
-- Être patient et encourageant avec les étudiants"""
 
 
 @login_required
@@ -387,22 +427,29 @@ def dashboard(request):
     docs_exam  = Document.objects.filter(doc_type='EXAM').count()
 
     # ── Documents par année ──
-    docs_par_niveau = []
-    for level in Level.objects.all():
-        count = Document.objects.filter(subject__level=level).count()
-        docs_par_niveau.append({
-            'level': level.get_name_display(),
-            'count': count,
-        })
+    # Remplacez les deux boucles Level.objects.all() par ceci :
 
-    # ── Étudiants par année ──
+    YEAR_ORDER = ['1AP', '2ST', '2MI', '3ST', '3MI']
+    
+    docs_par_niveau = []
+    for name in YEAR_ORDER:
+        level = Level.objects.filter(name=name).first()
+        if level:
+            count = Document.objects.filter(subject__level=level).count()
+            docs_par_niveau.append({
+                'level': level.get_name_display(),
+                'count': count,
+            })
+    
     etudiants_par_niveau = []
-    for level in Level.objects.all():
-        count = StudentProfile.objects.filter(year=level.name).count()
-        etudiants_par_niveau.append({
-            'level': level.get_name_display(),
-            'count': count,
-        })
+    for name in YEAR_ORDER:
+        level = Level.objects.filter(name=name).first()
+        if level:
+            count = StudentProfile.objects.filter(year=name).count()
+            etudiants_par_niveau.append({
+                'level': level.get_name_display(),
+                'count': count,
+            })
 
     # ── Derniers documents ajoutés ──
     recent_docs = Document.objects.select_related(

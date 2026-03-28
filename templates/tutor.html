@@ -25,26 +25,24 @@
       <h3><i class="fas fa-history"></i> Historique</h3>
       <ul class="history-list">
         {% for msg in messages_history %}
-          {% if msg.role == 'user' %}
-            <li title="{{ msg.content }}">
-              <i class="fas fa-user" style="font-size:0.75rem; margin-right:6px;"></i>
-              {{ msg.content|truncatechars:35 }}
-            </li>
-          {% endif %}
+        {% if msg.role == 'user' %}
+        <li title="{{ msg.content }}">
+          <i class="fas fa-user" style="font-size:0.75rem; margin-right:6px;"></i>
+          {{ msg.content|truncatechars:35 }}
+        </li>
+        {% endif %}
         {% empty %}
-          <li style="color:var(--text-light); font-size:0.85rem;">
-            Aucun historique
-          </li>
+        <li style="color:var(--text-light); font-size:0.85rem;">
+          Aucun historique
+        </li>
         {% endfor %}
       </ul>
 
       <!-- Bouton effacer historique -->
       {% if messages_history %}
-      <form method="POST" action="{% url 'clear_history' %}"
-            style="margin-top: 12px;">
+      <form method="POST" action="{% url 'clear_history' %}" style="margin-top: 12px;">
         {% csrf_token %}
-        <button type="submit"
-                style="width:100%; padding:8px; border-radius:8px;
+        <button type="submit" style="width:100%; padding:8px; border-radius:8px;
                        background:rgba(239,68,68,0.1); color:#ef4444;
                        border:1px solid rgba(239,68,68,0.3);
                        cursor:pointer; font-size:0.85rem;">
@@ -65,11 +63,9 @@
         </select>
       </div>
       <div class="chat-actions">
-        <form method="POST" action="{% url 'clear_history' %}"
-              style="display:inline;">
+        <form method="POST" action="{% url 'clear_history' %}" style="display:inline;">
           {% csrf_token %}
-          <button type="submit" title="Effacer la conversation"
-                  style="background:none; border:none; cursor:pointer;
+          <button type="submit" title="Effacer la conversation" style="background:none; border:none; cursor:pointer;
                          color:var(--text-light); font-size:1rem;">
             <i class="fas fa-trash-alt"></i>
           </button>
@@ -83,27 +79,25 @@
       <!-- Message de bienvenue -->
       <div class="message ai-msg">
         <strong>Tuteur IA — PEI</strong><br>
-        Bonjour {{ request.user.get_full_name|default:request.user.username }} ! 
-        Je suis votre assistant universitaire. Posez-moi vos questions sur 
+        Bonjour {{ request.user.get_full_name|default:request.user.username }} !
+        Je suis votre assistant universitaire. Posez-moi vos questions sur
         vos cours, exercices ou examens.
       </div>
 
       <!-- Historique chargé depuis la base de données -->
       {% for msg in messages_history %}
-        {% if msg.role == 'user' %}
-          <div class="message user-msg">{{ msg.content }}</div>
-        {% else %}
-          <div class="message ai-msg">{{ msg.content }}</div>
-        {% endif %}
+      {% if msg.role == 'user' %}
+      <div class="message user-msg">{{ msg.content }}</div>
+      {% else %}
+      <div class="message ai-msg">{{ msg.content }}</div>
+      {% endif %}
       {% endfor %}
 
     </div>
 
     <!-- Zone de saisie -->
     <div class="chat-input-area">
-      <input type="text" id="user-input"
-             placeholder="Posez votre question au tuteur..."
-             autocomplete="off"/>
+      <input type="text" id="user-input" placeholder="Posez votre question au tuteur..." autocomplete="off" />
       <button class="btn-send" id="send-btn" onclick="sendMessage()">
         <i class="fas fa-paper-plane"></i>
       </button>
@@ -113,14 +107,14 @@
 
 <script>
   const chatWindow = document.getElementById('chat-window');
-  const userInput  = document.getElementById('user-input');
-  const sendBtn    = document.getElementById('send-btn');
+  const userInput = document.getElementById('user-input');
+  const sendBtn = document.getElementById('send-btn');
 
   // Scroll automatique vers le bas au chargement
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
   // Envoyer avec la touche Entrée
-  userInput.addEventListener('keypress', function(e) {
+  userInput.addEventListener('keypress', function (e) {
     if (e.key === 'Enter') sendMessage();
   });
 
@@ -141,6 +135,44 @@
     const div = document.createElement('div');
     div.classList.add('message', role === 'user' ? 'user-msg' : 'ai-msg');
     div.textContent = content;
+
+    // Bouton Réessayer uniquement sur les messages de l'IA
+    if (role === 'assistant') {
+      const retryBtn = document.createElement('button');
+      retryBtn.innerHTML = '<i class="fas fa-redo"></i> Réessayer';
+      retryBtn.style.cssText = `
+            margin-top: 8px; padding: 5px 12px;
+            background: none; border: 1px solid var(--input-border);
+            border-radius: 8px; cursor: pointer;
+            color: var(--text-light); font-size: 0.78rem;
+            display: flex; align-items: center; gap: 6px;
+            transition: all 0.2s;`;
+
+      retryBtn.onmouseover = () => {
+        retryBtn.style.borderColor = 'var(--primary-color)';
+        retryBtn.style.color = 'var(--primary-color)';
+      };
+      retryBtn.onmouseout = () => {
+        retryBtn.style.borderColor = 'var(--input-border)';
+        retryBtn.style.color = 'var(--text-light)';
+      };
+
+      // Au clic — renvoie le dernier message utilisateur
+      retryBtn.onclick = () => {
+        const allUserMsgs = document.querySelectorAll('.user-msg');
+        if (allUserMsgs.length > 0) {
+          const lastUserMsg = allUserMsgs[allUserMsgs.length - 1].textContent;
+          userInput.value = lastUserMsg;
+
+          // Supprimer ce message IA et renvoyer
+          div.remove();
+          sendMessage();
+        }
+      };
+
+      div.appendChild(retryBtn);
+    }
+
     chatWindow.appendChild(div);
     chatWindow.scrollTop = chatWindow.scrollHeight;
     return div;
@@ -150,15 +182,13 @@
     const message = userInput.value.trim();
     if (!message) return;
 
-    // Afficher le message utilisateur
     addMessage(message, 'user');
     userInput.value = '';
     sendBtn.disabled = true;
 
-    // Indicateur de chargement
     const loadingDiv = document.createElement('div');
     loadingDiv.classList.add('message', 'ai-msg');
-    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> En cours de réflexion...';
+    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Recherche dans vos cours...';
     chatWindow.appendChild(loadingDiv);
     chatWindow.scrollTop = chatWindow.scrollHeight;
 
@@ -176,7 +206,17 @@
       loadingDiv.remove();
 
       if (data.reply) {
-        addMessage(data.reply, 'assistant');
+        const msgDiv = addMessage(data.reply, 'assistant');
+
+        // Indicateur RAG
+        if (data.rag_used) {
+          const ragBadge = document.createElement('div');
+          ragBadge.style.cssText = `
+                    font-size: 0.72rem; color: #10b981; margin-top: 6px;
+                    display: flex; align-items: center; gap: 4px;`;
+          ragBadge.innerHTML = '<i class="fas fa-book"></i> Réponse basée sur vos cours';
+          msgDiv.appendChild(ragBadge);
+        }
       } else {
         addMessage('Erreur : ' + (data.error || 'Réponse invalide'), 'assistant');
       }
